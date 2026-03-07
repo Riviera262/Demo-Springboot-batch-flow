@@ -1,6 +1,6 @@
--- ==========================================
+
 -- 1. TABLE: SYS_USER
--- ==========================================
+
 CREATE TABLE SYS_USER (
     username VARCHAR2(50) NOT NULL,
     password VARCHAR2(256) NOT NULL,
@@ -11,9 +11,8 @@ CREATE TABLE SYS_USER (
     CONSTRAINT pk_sys_user PRIMARY KEY (username)
 );
 
--- ==========================================
 -- 2. TABLE: UPLOAD_BATCH
--- ==========================================
+
 CREATE TABLE UPLOAD_BATCH (
     batch_id VARCHAR2(50) NOT NULL,
     uploaded_by VARCHAR2(50) NOT NULL,
@@ -36,12 +35,10 @@ CREATE TABLE UPLOAD_BATCH (
     updated_at TIMESTAMP,
     CONSTRAINT pk_upload_batch PRIMARY KEY (batch_id)
 );
-
 CREATE INDEX idx_upload_batch_status ON UPLOAD_BATCH(status);
 
--- ==========================================
--- 3. TABLE: MB_TRANSACTION_UPL (Bảng Tạm)
--- ==========================================
+-- 3. TABLE: MB_TRANSACTION_UPL (Temporary data table)
+
 CREATE TABLE MB_TRANSACTION_UPL (
     batch_id VARCHAR2(40) NOT NULL,
     trace VARCHAR2(20) NOT NULL,
@@ -59,12 +56,10 @@ CREATE TABLE MB_TRANSACTION_UPL (
     file_name VARCHAR2(200),
     CONSTRAINT pk_mb_transaction_upl PRIMARY KEY (batch_id, trace)
 );
-
 CREATE INDEX idx_mb_upl_batch_status ON MB_TRANSACTION_UPL(batch_id, status);
 
--- ==========================================
--- 4. TABLE: MB_TRANSACTION (Bảng Chính)
--- ==========================================
+-- 4. TABLE: MB_TRANSACTION (main table)
+
 CREATE TABLE MB_TRANSACTION (
     trace VARCHAR2(20) NOT NULL,
     batch_id VARCHAR2(40) NOT NULL,
