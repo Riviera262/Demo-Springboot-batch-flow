@@ -71,7 +71,7 @@ public class UploadBatch {
     @Column(name = "approval_message", columnDefinition = "CLOB")
     private String approvalMessage;
 
-    @Column(name = "create_at", nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")

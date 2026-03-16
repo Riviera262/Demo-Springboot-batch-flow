@@ -41,4 +41,9 @@ public interface MbTransactionUplRepository extends JpaRepository<MbTransactionU
             @Param("batchId") String batchId,
             @Param("status") String status
     );
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM MbTransactionUpl u WHERE u.id.batchId = :batchId")
+    void deleteByBatchId(@Param("BatchId") String batchId);
 }

@@ -11,6 +11,7 @@ import org.example.transactionsmanagement.repository.MbTransactionUplRepository;
 import org.example.transactionsmanagement.repository.UploadBatchRepository;
 import org.example.transactionsmanagement.utils.BatchIdGenerator;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -346,15 +347,41 @@ public class UploadBatchService {
         }
     }
 
+    //Recover stuck batches with status 'PROCESSING'
+    public String recoverProcessingBatches(String triggeredBy){
+        log.info("Finding stuck batches with status 'PROCESSING'...");
+
+        //Find all the stuck batches with status 'PROCESSING' and thresHoldTime over 30 minutes
+        LocalDateTime thresHoldTime = LocalDateTime.now().minusMinutes(30);
+        List<UploadBatch> stuckBatch = uploadBatchRepository.findStuckBatches("PROCESSING", thresHoldTime);
+
+        if (stuckBatch.isEmpty()){
+            return "System have 0 stuck batches with status 'PROCESSING'. No stuck batches found";
+        }
+
+        for (UploadBatch batch : stuckBatch){
+            String batchId = batch.getBatchId();
+
+            mbTransactionUplRepository.deleteByBatchId(batchId);
+
+            uploadBatchRepository.updateStatusByBatchId(batchId, "FAILED");
+
+            log.info("System has finished processing. Batch " + batchId + " got change status to 'FAILED'");
+        }
+        String resultMsg = String.format("recover batches with status 'PROCESSING' done by %s", triggeredBy);
+        return resultMsg;
+    }
+
     //Recover stuck batches with status 'APPROVING'
-    public String recoverStuckBatches(String approvedBy) {
+    public String recoverApprovingBatches(String triggeredBy) {
         log.info("Finding stuck batches with status 'APPROVING'...");
 
-        //Find all the stuck batches with status 'APPROVING'
-        List<UploadBatch> stuckBatches = uploadBatchRepository.findByStatus("APPROVING");
+        //Find all the stuck batches with status 'APPROVING' and thresholdTime over 30 minutes
+        LocalDateTime thresHoldTime = LocalDateTime.now().minusMinutes(30);
+        List<UploadBatch> stuckBatches = uploadBatchRepository.findStuckBatches("APPROVING", thresHoldTime);
 
         if (stuckBatches.isEmpty()) {
-            return "System have 0 stuck batches. No stuck batches found";
+            return "System have 0 stuck batches with status 'APPROVING'. No stuck batches found";
         }
 
         //Number of batch got recover as status 'APPROVED'
@@ -376,7 +403,7 @@ public class UploadBatchService {
 
                 uploadBatchRepository.markAsApproved(
                         batchId,
-                        approvedBy,
+                        triggeredBy,
                         activeCount,
                         delCount,
                         "Recovered and synced after system crash"
@@ -392,8 +419,24 @@ public class UploadBatchService {
             }
         }
 
-        String resultMsg = String.format("recoverd done: " + recoveredAsApproved + " got 'APPROVED'. " + resetToCompleted + " got reset to status 'COMPLETED'");
+        String resultMsg = String.format("recover done: %d got 'APPROVED' %s. %d got reset to status 'COMPLETED'", recoveredAsApproved, triggeredBy, resetToCompleted);
         log.info(resultMsg);
         return resultMsg;
     }
+
+    @Scheduled(fixedDelayString = "${app.scheduler.recovery-delay}")
+    public void autoRecoveryStuckBatch(){
+        log.info("Schedule triggering process to recovery batches got stuck due to server crashed");
+
+        //Recover batches with status 'PROCESSING' and 'APPROVING'
+        String resultProcessing = recoverProcessingBatches("SYSTEM_AUTO_RECOVERY");
+        log.info(resultProcessing);
+
+        String resultApproving = recoverApprovingBatches("SYSTEM_AUTO_RECOVERY");
+        log.info(resultApproving);
+
+        log.info("Schedule recovery batches done");
+    }
+
+
 }

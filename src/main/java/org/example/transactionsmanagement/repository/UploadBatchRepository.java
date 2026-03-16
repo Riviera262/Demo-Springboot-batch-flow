@@ -106,8 +106,9 @@ public interface UploadBatchRepository extends JpaRepository<UploadBatch, String
     );
 
     //Find stuck batch(status 'PROCESSING') if server crashed
-    @Query("SELECT ub FROM UploadBatch ub WHERE ub.status ='PROCESSING' AND ub.startProcessTime < :thresholdTime")
+    @Query("SELECT ub FROM UploadBatch ub WHERE ub.status = :status AND ub.startProcessTime < :thresholdTime")
     List<UploadBatch> findStuckBatches(
+        @Param ("status") String status,
         @Param("thresholdTime") LocalDateTime thresholdTime
     );
 

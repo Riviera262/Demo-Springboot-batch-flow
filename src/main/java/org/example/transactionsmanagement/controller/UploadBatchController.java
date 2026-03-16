@@ -97,11 +97,19 @@ public class UploadBatchController {
     }
 
     //Recover batches with status 'APPROVING'
-    @PostMapping("/recover-stuck-batches")
+    @PostMapping("/recover-approving-batches")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> recoverStuckBatches(Principal principal) {
+    public ResponseEntity<String> recoverApprovingBatches(Principal principal) {
         return ResponseEntity.ok(
-                uploadBatchService.recoverStuckBatches(principal.getName())
+                uploadBatchService.recoverApprovingBatches(principal.getName())
+        );
+    }
+
+    @PostMapping("/recover-processing-batches")
+    @PreAuthorize("hasRole ('ADMIN')")
+    public ResponseEntity<String> recoverProcessingBatches(Principal principal){
+        return ResponseEntity.ok(
+                uploadBatchService.recoverProcessingBatches(principal.getName())
         );
     }
 }

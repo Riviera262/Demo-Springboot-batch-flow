@@ -38,7 +38,7 @@ public class ChunkProcessService {
     @Autowired
     private ChunkProcessService self;
 
-    private static final int CHUNK_SIZE = 1000;
+    private static final int CHUNK_SIZE = 5000;
     private static final int STREAMING_ROW_CACHE = 100;
 
     private static final List<DateTimeFormatter> DATETIME_FORMATTERS = List.of(
