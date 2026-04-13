@@ -24,13 +24,13 @@ public interface MbTransactionUplRepository extends JpaRepository<MbTransactionU
         WHERE BATCH_ID = :batchId AND STATUS = 'INIT'
           AND EXISTS (SELECT 1 FROM MB_TRANSACTION t WHERE t.TRACE = u.TRACE)
         """, nativeQuery = true)
-    int markAsDel(@Param("batchId") String batchId);
+    long markAsDel(@Param("batchId") String batchId);
 
     //Update all the remaining transactions of the selected batches with status 'INIT', this is 100% clean data no duplicate trace due to we update all the duplicate one to 'DEL' already
     @Modifying
     @Transactional
     @Query(value = "UPDATE MB_TRANSACTION_UPL SET STATUS = 'ACTIVE' WHERE BATCH_ID = :batchId AND STATUS = 'INIT'", nativeQuery = true)
-    int markAsActive(@Param("batchId") String batchId);
+    long markAsActive(@Param("batchId") String batchId);
 
     //Get all result of a batch with all status in it (INIT, DEL, ACTIVE)
     @Query("SELECT u.status, COUNT(u) FROM MbTransactionUpl u WHERE u.id.batchId = :batchId GROUP BY u.status")

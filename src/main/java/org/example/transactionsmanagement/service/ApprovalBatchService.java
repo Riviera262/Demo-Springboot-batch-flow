@@ -46,7 +46,7 @@ public class ApprovalBatchService {
 
             //Mark inserted transactions status as 'ACTIVE' in MB_TRANSACTION_UPL
             log.info("Marking inserted rows as 'ACTIVE' in MB_TRANSACTION_UPL");
-            int updatedActiveCount = mbTransactionUplRepository.markAsActive(batchId);
+            long updatedActiveCount = mbTransactionUplRepository.markAsActive(batchId);
             log.info("Marked {} rows as 'ACTIVE' in MB_TRANSACTION_UPL", updatedActiveCount);
             log.info("");
 

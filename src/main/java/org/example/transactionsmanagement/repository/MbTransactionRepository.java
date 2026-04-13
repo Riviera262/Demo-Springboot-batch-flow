@@ -28,7 +28,7 @@ public interface MbTransactionRepository extends JpaRepository<MbTransaction, St
             "WHERE BATCH_ID = :batchId "+
             "AND STATUS = 'INIT'"
             , nativeQuery = true)
-    int insertFromUpl(@Param("batchId") String Id, @Param("approverUsername") String approverUsername);
+    long insertFromUpl(@Param("batchId") String Id, @Param("approverUsername") String approverUsername);
 
     //Count how much transactions in a batch in mbtransaction table
     long countByBatchId(String batchId);

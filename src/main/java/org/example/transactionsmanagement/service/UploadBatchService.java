@@ -110,6 +110,8 @@ public class UploadBatchService {
             }
 
             throw new RuntimeException("Failed to save uploaded files: " + e.getMessage());
+        } catch(IllegalArgumentException e){
+            throw e;
         } catch (Exception e) {
             log.error("Unexpected error during upload for batch: {} ", batchId, e);
             throw new RuntimeException("Upload failed: " + e.getMessage());

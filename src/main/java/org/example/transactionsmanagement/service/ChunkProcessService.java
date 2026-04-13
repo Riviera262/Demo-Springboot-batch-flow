@@ -58,11 +58,13 @@ public class ChunkProcessService {
 
     @PersistenceContext
     private EntityManager entityManager;
-
     //Processing excel file
     public ProcessingResult processExcelFile(String batchId, Path excelFilePath, String uploadedBy, Set<String> globalSeenTrace) {
         String fileName = excelFilePath.getFileName().toString();
         DataFormatter dataFormatter = new DataFormatter();
+
+        boolean firstRow = true;
+        boolean invalidTemplate = false;
 
         long totalRows = 0;
         long successRows = 0;
@@ -78,7 +80,6 @@ public class ChunkProcessService {
             Sheet sheet = workbook.getSheetAt(0);
             List<MbTransactionUpl> chunk = new ArrayList<>();
 
-            boolean firstRow = true;
             int rowIndex = 0;
 
             for (Row row : sheet) {
@@ -87,9 +88,12 @@ public class ChunkProcessService {
                 //Skip header
                 if (firstRow) {
                     firstRow = false;
-                    if (isHeaderRow(row, dataFormatter)) {
-                        continue;
+                    if (!isValidHeaderTemplate(row, dataFormatter)) {
+                        invalidTemplate = true;
+                        //End the process, move to catch immediately
+                        throw new RuntimeException("INVALID_TEMPLATE");
                     }
+                    continue;
                 }
 
                 //Plus 1 for every 1 row we start to process
@@ -143,7 +147,7 @@ public class ChunkProcessService {
                     //Add to chunk
                     chunk.add(mbTransactionUpl);
 
-                    //If chunk reach 1000 then save
+                    //If chunk reach to the size then save
                     if (chunk.size() >= CHUNK_SIZE) {
                         try {
                             self.saveChunk(chunk, fileName);
@@ -181,13 +185,23 @@ public class ChunkProcessService {
                         if (err == null){
                             successRows++;
                         } else {
+                            failedRows++;
                             errors.add(err);
                         }
                     }
                 }
             }
         } catch (Exception e) {
-            throw new RuntimeException("Failed to process Excel file");
+            if("INVALID_TEMPLATE".equals(e.getMessage()) || invalidTemplate){
+                return ProcessingResult.builder()
+                        .totalRows(0)
+                        .successRows(0)
+                        .failedRows(0)
+                        .errors(List.of(buildError(fileName, "",
+                                "Invalid Excel Header Template — expected columns: TRACE, FROM_ACC, TRANX_TIME, AMOUNT, TO_ACC, REMARK, TRANX_TYPE")))
+                        .build();
+            }
+            throw new RuntimeException("Failed to process Excel file", e);
         }
 
         ProcessingResult result = ProcessingResult.builder()
@@ -310,9 +324,21 @@ public class ChunkProcessService {
     }
 
     //Check the first row if it true or false
-    private boolean isHeaderRow(Row row, DataFormatter dataFormatter){
-        String first = getString(row.getCell(0), dataFormatter);
-        return first != null && first.toUpperCase().contains("TRACE");
+    private boolean isValidHeaderTemplate(Row row, DataFormatter dataFormatter){
+        String[] expectedHeaders = {
+                "TRACE", "FROM_ACC", "TRANX_TIME", "AMOUNT",
+                "TO_ACC", "REMARK", "TRANX_TYPE"
+        };
+
+        for (int i = 0; i< expectedHeaders.length; i++){
+            String cellValue = getString(row.getCell(i), dataFormatter);
+            if (cellValue == null || !cellValue.toUpperCase().contains(expectedHeaders[i])){
+                log.error("Header mismatch at column {}. Expected contains: {}, Found: {}",
+                        i, expectedHeaders, cellValue);
+                return false;
+            }
+        }
+        return true;
     }
 
     //Catch errors
