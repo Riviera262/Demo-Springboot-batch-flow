@@ -24,7 +24,7 @@ spring.servlet.multipart.max-file-size=500MB
 spring.servlet.multipart.max-request-size=600MB
 
 # Secret Key JWT
-app.jwt.secret=transactionsmanagement.app.jwtSecret=MySecretKeyForJWTTokenSigningMustBeAtLeast256BitsLongForHS256Algorithm
+app.jwt.secret=
 # Expired time of JWT (24h)
 app.jwt.expiration-ms=86400000
 
